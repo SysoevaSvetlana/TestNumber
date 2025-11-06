@@ -1,5 +1,6 @@
 package com.example.test.controller;
 
+import com.example.test.dto.ErrorResponse;
 import com.example.test.service.NumberService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -9,6 +10,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +36,10 @@ public class NumberController {
                     - Отправили 3 → Вернули [3]
                     - Отправили 2 → Вернули [2, 3]
                     - Отправили 1 → Вернули [1, 2, 3]
+
+                    Валидация:
+                    - Число не может быть null
+                    - Должно быть целым числом (Integer)
                     """
     )
     @ApiResponses(value = {
@@ -51,12 +58,19 @@ public class NumberController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Неверный формат данных",
+                    description = "Ошибка валидации или неверный формат данных",
                     content = @Content(
                             mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(
                                     name = "Ошибка валидации",
-                                    value = "{\"status\": 400, \"error\": \"Bad Request\", \"message\": \"JSON parse error\"}"
+                                    value = """
+                                            {
+                                              "error": "VALIDATION_ERROR",
+                                              "message": "Число не может быть null",
+                                              "timestamp": "2025-11-06T22:30:00"
+                                            }
+                                            """
                             )
                     )
             )
@@ -69,6 +83,8 @@ public class NumberController {
                     example = "42",
                     schema = @Schema(type = "integer", format = "int32")
             )
+            @Valid
+            @NotNull(message = "Число не может быть null")
             @RequestBody Integer number
     ) {
         List<Integer> sortedNumbers = numberService.addNumberAndGetSorted(number);
